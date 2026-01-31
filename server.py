@@ -6,7 +6,7 @@ from building_analyzer import BuildingAnalyzer
 from recommendations import RecommendationEngine
 
 app = Flask(__name__, static_folder='static')
-app.secret_key = 'your-secret-key-for-demo'  # Change in production
+app.secret_key = os.environ.get('SECRET_KEY', 'default-dev-key')  # Change in production
 
 # Configuration
 UPLOAD_FOLDER = 'uploads'
