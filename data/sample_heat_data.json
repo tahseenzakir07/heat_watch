@@ -1,0 +1,50 @@
+{
+  "heat_zones": {
+    "urban_high": {
+      "base_temp": 38.5,
+      "heat_index": 0.85,
+      "description": "Dense urban area with high heat island effect"
+    },
+    "urban_medium": {
+      "base_temp": 35.2,
+      "heat_index": 0.65,
+      "description": "Urban area with moderate heat island effect"
+    },
+    "suburban": {
+      "base_temp": 32.8,
+      "heat_index": 0.45,
+      "description": "Suburban area with low heat island effect"
+    },
+    "rural": {
+      "base_temp": 29.5,
+      "heat_index": 0.25,
+      "description": "Rural area with minimal heat island effect"
+    }
+  },
+  "sample_locations": [
+    {
+      "name": "Downtown Mumbai",
+      "lat": 19.0760,
+      "lng": 72.8777,
+      "zone": "urban_high"
+    },
+    {
+      "name": "Bengaluru Tech Park",
+      "lat": 12.9716,
+      "lng": 77.5946,
+      "zone": "urban_medium"
+    },
+    {
+      "name": "Pune Suburbs",
+      "lat": 18.5204,
+      "lng": 73.8567,
+      "zone": "suburban"
+    },
+    {
+      "name": "Rural Area",
+      "lat": 15.3173,
+      "lng": 75.7139,
+      "zone": "rural"
+    }
+  ]
+}

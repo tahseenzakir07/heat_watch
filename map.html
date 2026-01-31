@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>UHI Builder Analysis - Location Selection</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <link rel="stylesheet" href="styles.css?v=1.1">
+</head>
+
+<body>
+    <div class="container" style="max-width: 1400px; padding-left: 5%; padding-right: 5%;">
+        <header class="header">
+            <h1>📍 Select Construction Location</h1>
+            <p>Centrally locate your building site to begin heat risk assessment</p>
+        </header>
+
+        <main style="display: flex; flex-direction: column; align-items: center;">
+            <div class="card" style="width: 100%; max-width: 1100px;">
+                <div
+                    style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem; flex-wrap: wrap; gap: 1rem;">
+                    <h2 style="margin: 0; font-size: 2rem;">🗺️ Interactive Map</h2>
+                    <div id="coordinates" class="coordinate-badge">
+                        Select a point on the map below
+                    </div>
+                </div>
+
+                <div id="map"
+                    style="height: 600px; border-radius: var(--radius-md); border: 2px solid rgba(255,255,255,0.1); width: 100%; margin: 0 auto;">
+                </div>
+
+                <div
+                    style="margin-top: 2.5rem; display: flex; justify-content: space-between; align-items: center; width: 100%; gap: 1rem;">
+                    <button class="btn btn-secondary" onclick="goBack()">
+                        ← Back
+                    </button>
+                    <button id="analyzeBtn" class="btn btn-primary" onclick="analyzeLocation()" disabled
+                        style="opacity: 0.3;">
+                        Analyze Location →
+                    </button>
+                </div>
+
+                <!-- Sample Locations with Centered Design -->
+                <div style="margin-top: 3rem; padding-top: 2rem; border-top: 1px solid rgba(255,255,255,0.05);">
+                    <h4 style="text-align: center; margin-bottom: 2rem; font-size: 1.25rem;">💡 Recommended Calibration
+                        Points:</h4>
+                    <div class="grid-2" style="margin-top: 0;">
+                        <div class="location-card" onclick="goToLocation(19.0760, 72.8777, 'Mumbai')">
+                            <div class="location-icon" style="background: var(--gradient-vulcan);">🏙️</div>
+                            <div>
+                                <strong>Mumbai Downtown</strong>
+                                <p class="text-secondary">Extreme Heat Zone</p>
+                            </div>
+                        </div>
+                        <div class="location-card" onclick="goToLocation(12.9716, 77.5946, 'Bangalore')">
+                            <div class="location-icon" style="background: var(--gradient-horizon);">🏢</div>
+                            <div>
+                                <strong>Bangalore Central</strong>
+                                <p class="text-secondary">Moderate Impact</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Analysis Status Transition -->
+            <div id="loadingCard" class="card mt-lg hidden" style="width: 100%; max-width: 1100px; text-align: center;">
+                <div style="padding: 2rem;">
+                    <div class="spinner"></div>
+                    <h3 class="mt-md">Fetching Urban Geometry & Thermal Data...</h3>
+                    <div class="progress-bar">
+                        <div class="progress-fill" id="progressFill"></div>
+                    </div>
+                    <p class="text-secondary">Synchronizing building features with local climate profiles</p>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script>
+        let map;
+        let selectedLat = null;
+        let selectedLng = null;
+        let marker = null;
+
+        function initMap() {
+            map = L.map('map').setView([20.5937, 78.9629], 5);
+
+            L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+                attribution: '©OpenStreetMap, ©CartoDB'
+            }).addTo(map);
+
+            map.on('click', (e) => placeMarker(e.latlng));
+        }
+
+        function placeMarker(latlng) {
+            selectedLat = latlng.lat;
+            selectedLng = latlng.lng;
+
+            if (marker) map.removeLayer(marker);
+
+            const customIcon = L.divIcon({
+                className: 'custom-marker',
+                html: `<div style="background: var(--gradient-premium); width: 32px; height: 32px; border-radius: 50% 50% 50% 0; border: 3px solid white; transform: rotate(-45deg); box-shadow: 0 0 20px var(--accent-purple);"></div>`,
+                iconSize: [32, 32],
+                iconAnchor: [16, 32]
+            });
+
+            marker = L.marker([selectedLat, selectedLng], { icon: customIcon }).addTo(map);
+
+            document.getElementById('coordinates').textContent = `📍 ${selectedLat.toFixed(4)}°, ${selectedLng.toFixed(4)}°`;
+
+            const analyzeBtn = document.getElementById('analyzeBtn');
+            analyzeBtn.disabled = false;
+            analyzeBtn.style.opacity = '1';
+        }
+
+        function goToLocation(lat, lng) {
+            map.setView([lat, lng], 13, { animate: true });
+            setTimeout(() => placeMarker(L.latLng(lat, lng)), 600);
+        }
+
+        async function analyzeLocation() {
+            document.getElementById('loadingCard').classList.remove('hidden');
+            document.getElementById('analyzeBtn').disabled = true;
+
+            const fill = document.getElementById('progressFill');
+            let p = 0;
+            const int = setInterval(() => {
+                p += (100 - p) * 0.1;
+                fill.style.width = p + '%';
+                if (p > 95) clearInterval(int);
+            }, 200);
+
+            const res = await fetch('/api/analyze-location', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ latitude: selectedLat, longitude: selectedLng })
+            });
+
+            if (res.ok) {
+                fill.style.width = '100%';
+                setTimeout(() => window.location.href = '/results.html', 400);
+            }
+        }
+
+        function goBack() { window.location.href = '/'; }
+        window.addEventListener('DOMContentLoaded', initMap);
+    </script>
+</body>
+
+</html>

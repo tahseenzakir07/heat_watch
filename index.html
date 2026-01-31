@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>UHI Builder Analysis - Dashboard</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="styles.css?v=1.1">
+</head>
+
+<body>
+    <div class="container">
+        <header class="header">
+            <h1>🌡️ Urban Heat Island Analysis</h1>
+            <p>AI-Powered Building Location Assessment for Smart Construction</p>
+        </header>
+
+        <main>
+            <div class="card">
+                <div style="text-align: center; margin-bottom: 2.5rem;">
+                    <h2
+                        style="font-size: 2.5rem; margin-bottom: 0.5rem; background: var(--gradient-premium); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;">
+                        📁 Upload Building Schematic</h2>
+                    <p class="text-secondary">Upload a plan or design to begin the environmental heat analysis</p>
+                </div>
+
+                <form id="uploadForm" enctype="multipart/form-data">
+                    <div class="upload-zone" id="uploadZone">
+                        <span class="upload-icon">📤</span>
+                        <p class="upload-text"><strong>Click to upload</strong> or drag & drop</p>
+                        <p class="upload-hint">PNG, JPG, JPEG, GIF (Max 16MB)</p>
+                        <input type="file" id="fileInput" name="building_image" accept="image/*" style="display: none;">
+                    </div>
+                </form>
+
+                <!-- Preview Area -->
+                <div id="previewArea" class="hidden"
+                    style="margin-top: 2rem; text-align: center; padding: 2rem; background: rgba(255,255,255,0.03); border-radius: var(--radius-md);">
+                    <h4 class="mb-sm">📷 Image Preview</h4>
+                    <img id="imagePreview"
+                        style="max-width: 100%; max-height: 350px; border-radius: 12px; border: 2px solid rgba(255,255,255,0.1); margin-bottom: 1rem;">
+                    <p id="fileInfo" class="text-secondary"></p>
+                </div>
+
+                <!-- Status Elements (Initially Hidden) -->
+                <div id="uploadStatus" class="hidden" style="margin-top: 2rem; text-align: center;">
+                    <div class="spinner"></div>
+                    <p class="mt-sm" style="font-weight: 600;">Processing & Analyzing Design...</p>
+                </div>
+
+                <div id="uploadSuccess" class="hidden" style="margin-top: 2rem;">
+                    <div
+                        style="text-align: center; padding: 2rem; background: rgba(0, 255, 157, 0.05); border-radius: var(--radius-md); border: 2px solid var(--success);">
+                        <div style="font-size: 3rem; margin-bottom: 1rem;">✨</div>
+                        <h3 style="color: var(--success); margin-bottom: 1rem;">Upload Successful!</h3>
+                        <p class="text-secondary mb-md" id="uploadedFileName"></p>
+                        <button type="button" class="btn btn-primary" onclick="goToMap()">
+                            Continue to Map →
+                        </button>
+                    </div>
+                </div>
+
+                <div id="uploadError" class="hidden" style="margin-top: 2rem;">
+                    <div
+                        style="text-align: center; padding: 2rem; background: rgba(255, 77, 77, 0.05); border-radius: var(--radius-md); border: 2px solid var(--danger);">
+                        <div style="font-size: 3rem; margin-bottom: 1rem;">⚠️</div>
+                        <h3 style="color: var(--danger); margin-bottom: 1rem;">Upload Failed</h3>
+                        <p class="text-secondary mb-md" id="errorMessage"></p>
+                        <button type="button" class="btn btn-secondary" onclick="resetUpload()">
+                            Try Again
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- How It Works with Balanced Spacing -->
+            <div class="card mt-lg">
+                <h3 style="font-size: 2rem; text-align: center; margin-bottom: 3rem;">🚀 How It Works</h3>
+                <div class="grid-2">
+                    <div class="feature-box">
+                        <div class="feature-number">1</div>
+                        <h4 class="mb-sm">Upload Design</h4>
+                        <p class="text-secondary">AI scans your schematic to estimate heat absorption and air flow
+                            impedance.</p>
+                    </div>
+                    <div class="feature-box">
+                        <div class="feature-number">2</div>
+                        <h4 class="mb-sm">Select Location</h4>
+                        <p class="text-secondary">Pinpoint your site on the map to fetch real-time Urban Heat Island
+                            (UHI) data.</p>
+                    </div>
+                    <div class="feature-box">
+                        <div class="feature-number">3</div>
+                        <h4 class="mb-sm">AI Analysis</h4>
+                        <p class="text-secondary">Our engine cross-references design features with local thermal zones.
+                        </p>
+                    </div>
+                    <div class="feature-box">
+                        <div class="feature-number">4</div>
+                        <h4 class="mb-sm">Expert Report</h4>
+                        <p class="text-secondary">Receive a suitability score and specialized advice for mitigation.</p>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        const uploadZone = document.getElementById('uploadZone');
+        const fileInput = document.getElementById('fileInput');
+        const uploadStatus = document.getElementById('uploadStatus');
+        const uploadSuccess = document.getElementById('uploadSuccess');
+        const uploadError = document.getElementById('uploadError');
+        const previewArea = document.getElementById('previewArea');
+        const imagePreview = document.getElementById('imagePreview');
+        const fileInfo = document.getElementById('fileInfo');
+
+        uploadZone.addEventListener('click', () => fileInput.click());
+
+        uploadZone.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            uploadZone.style.borderColor = 'var(--accent-blue)';
+        });
+
+        uploadZone.addEventListener('dragleave', () => {
+            uploadZone.style.borderColor = 'rgba(99, 102, 241, 0.4)';
+        });
+
+        uploadZone.addEventListener('drop', (e) => {
+            e.preventDefault();
+            uploadZone.style.borderColor = 'rgba(99, 102, 241, 0.4)';
+            const files = e.dataTransfer.files;
+            if (files.length > 0) {
+                fileInput.files = files;
+                handleFileSelect(files[0]);
+            }
+        });
+
+        fileInput.addEventListener('change', (e) => {
+            if (e.target.files.length > 0) {
+                handleFileSelect(e.target.files[0]);
+            }
+        });
+
+        function handleFileSelect(file) {
+            const reader = new FileReader();
+            reader.onload = function (e) {
+                imagePreview.src = e.target.result;
+                previewArea.classList.remove('hidden');
+                fileInfo.textContent = `${file.name} | ${(file.size / 1024 / 1024).toFixed(2)} MB`;
+            };
+            reader.readAsDataURL(file);
+
+            // Wait brief moment for user to see preview before starting analysis status
+            setTimeout(() => handleFileUpload(file), 800);
+        }
+
+        async function handleFileUpload(file) {
+            // Validate
+            const validTypes = ['image/png', 'image/jpeg', 'image/jpg', 'image/gif'];
+            if (!validTypes.includes(file.type)) {
+                showError('Invalid format. Please upload an image.');
+                return;
+            }
+
+            // UI States
+            uploadStatus.classList.remove('hidden');
+            uploadSuccess.classList.add('hidden');
+            uploadError.classList.add('hidden');
+            uploadZone.style.opacity = '0.5';
+
+            const formData = new FormData();
+            formData.append('building_image', file);
+
+            try {
+                const response = await fetch('/api/upload', {
+                    method: 'POST',
+                    body: formData
+                });
+                const data = await response.json();
+
+                if (response.ok && data.success) {
+                    showSuccess(data.filename);
+                } else {
+                    showError(data.error || 'Analysis failed. Try another image.');
+                }
+            } catch (error) {
+                showError('Network error. Check server status.');
+            }
+        }
+
+        function showSuccess(filename) {
+            uploadStatus.classList.add('hidden');
+            uploadSuccess.classList.remove('hidden');
+            uploadZone.style.opacity = '1';
+            document.getElementById('uploadedFileName').textContent = filename;
+        }
+
+        function showError(message) {
+            uploadStatus.classList.add('hidden');
+            uploadError.classList.remove('hidden');
+            uploadZone.style.opacity = '1';
+            document.getElementById('errorMessage').textContent = message;
+        }
+
+        function resetUpload() {
+            uploadError.classList.add('hidden');
+            uploadSuccess.classList.add('hidden');
+            previewArea.classList.add('hidden');
+            fileInput.value = '';
+        }
+
+        function goToMap() {
+            window.location.href = '/map.html';
+        }
+    </script>
+</body>
+
+</html>

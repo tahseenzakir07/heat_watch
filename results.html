@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>UHI Analysis Report</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="styles.css?v=1.1">
+</head>
+
+<body class="results-page">
+    <div class="container" style="max-width: 1000px;">
+        <header class="header">
+            <h1>📊 Analysis Report</h1>
+            <p>Comprehensive Urban Heat Island assessment for your construction site</p>
+        </header>
+
+        <main id="content">
+            <!-- Loading state -->
+            <div class="card" style="text-align: center;">
+                <div class="spinner"></div>
+                <h3 class="mt-md">Retrieving Analysis Results...</h3>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        async function fetchResults() {
+            try {
+                const res = await fetch('/api/get-results');
+                const data = await res.json();
+                if (data.success) renderResults(data);
+                else showError("No analysis data found.");
+            } catch (e) { showError("Failed to reach server."); }
+        }
+
+        function renderResults(data) {
+            const { heat_data, recommendations } = data;
+            const container = document.getElementById('content');
+
+            const scoreColor = recommendations.suitability_score > 70 ? 'var(--success)' :
+                recommendations.suitability_score > 40 ? 'var(--warning)' : 'var(--danger)';
+
+            container.innerHTML = `
+                <!-- Suitability Score Section -->
+                <div class="card" style="text-align: center; margin-bottom: 2.5rem;">
+                    <div class="score-circle" style="background: var(--gradient-premium); color: white;">
+                        ${Math.round(recommendations.suitability_score)}%
+                    </div>
+                    <h2 style="font-size: 2.5rem; margin-bottom: 0.5rem; color: ${scoreColor};">${recommendations.verdict}</h2>
+                    <p class="text-secondary" style="font-size: 1.1rem;">Overall Construction Suitability</p>
+                    
+                    <!-- Expert Analysis Expandable Tab -->
+                    <div class="expert-tab" id="expertTab">
+                        <div class="expert-header">
+                            <span>🧠 AI Expert Insight & Rationale</span>
+                            <span class="expert-arrow">▼</span>
+                        </div>
+                        <div class="expert-content">
+                            <p style="font-size: 1.1rem; line-height: 1.8; font-style: italic;">
+                                "${recommendations.expert_insight}"
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Environmental Metrics -->
+                <div class="grid-2" style="margin-bottom: 2.5rem;">
+                    <div class="card" style="padding: 2rem;">
+                        <h4 class="text-secondary mb-sm">Ambient Temp</h4>
+                        <h3 style="font-size: 2.5rem;">${heat_data.temperature}°C</h3>
+                        <p class="text-muted">Local Air Temperature</p>
+                    </div>
+                    <div class="card" style="padding: 2rem;">
+                        <h4 class="text-secondary mb-sm">Heat Index</h4>
+                        <h3 style="font-size: 2.5rem;">${(heat_data.heat_index * 100).toFixed(0)}%</h3>
+                        <p class="text-muted">Relative Heat Severity</p>
+                    </div>
+                </div>
+
+                <!-- Strategic Recommendations -->
+                <div class="card" style="margin-bottom: 2.5rem;">
+                    <h3 style="margin-bottom: 2rem; font-size: 1.75rem;">💡 Strategic Recommendations</h3>
+                    <div style="display: flex; flex-direction: column; gap: 1rem;">
+                        ${recommendations.recommendations.map(r => `
+                            <div class="recommendation-item priority-${r.priority}">
+                                <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
+                                    <strong>${r.title}</strong>
+                                    <span class="badge badge-${r.priority === 'high' ? 'danger' : r.priority === 'medium' ? 'warning' : 'success'}" style="font-size: 0.7rem;">${r.priority}</span>
+                                </div>
+                                <p class="text-secondary" style="font-size: 0.95rem;">${r.description}</p>
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>
+
+                <!-- Mitigation Tactics -->
+                <div class="card">
+                    <h3 style="margin-bottom: 2rem; font-size: 1.75rem;">🛡️ Heat Mitigation Tactics</h3>
+                    <div class="grid-2" style="margin-top: 0;">
+                        ${recommendations.mitigation_strategies.map(s => `
+                            <div class="feature-box" style="padding: 1.5rem;">
+                                <h5 style="color: var(--accent-blue); margin-bottom: 0.5rem; font-size: 1.1rem;">${s.strategy}</h5>
+                                <p class="text-secondary" style="font-size: 0.9rem;">Effectiveness: <span style="color: var(--success); font-weight: bold;">${s.effectiveness}</span></p>
+                                <p class="text-muted" style="font-size: 0.85rem; margin-top: 0.5rem;">${s.benefit}</p>
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>
+
+                <div style="display: flex; justify-content: center; margin-top: 3rem; gap: 1.5rem;">
+                    <button class="btn btn-secondary" onclick="window.location.href='/'">New Analysis</button>
+                    <button class="btn btn-primary" onclick="window.print()">Export Report</button>
+                </div>
+            `;
+
+            // Add toggle logic
+            const tab = document.getElementById('expertTab');
+            tab.addEventListener('click', () => tab.classList.toggle('active'));
+        }
+
+        function showError(msg) {
+            document.getElementById('content').innerHTML = `<div class="card" style="text-align: center;"><h3>${msg}</h3><button class="btn btn-primary mt-md" onclick="window.location.href='/'">Back to Dashboard</button></div>`;
+        }
+
+        window.addEventListener('DOMContentLoaded', fetchResults);
+    </script>
+</body>
+
+</html>
